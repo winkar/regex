@@ -1,0 +1,9 @@
+{
+  "name": "regex",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "clone": "^0.1.11",
+    "prettyjson": "^1.1.3"
+  }
+}
