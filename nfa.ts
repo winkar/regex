@@ -49,17 +49,17 @@ export class NFA {
             this.start = nfa.start
             this.finish = nfa.finish
             this.edgesFromNode = clone(nfa.edgesFromNode)
-        }
-        if (s) {
+        } else if (s) {
             this.start = 0
             this.finish = 1
             this.nodesNumber = 2
             this.edgesFromNode = new Array<Array<NfaEdge>>()
-            let edge = new NfaEdge(this.finish, s)
-            if (!this.edgesFromNode[this.start]) {
-                this.edgesFromNode[this.start] = new Array<NfaEdge>()
-            }
-            this.edgesFromNode[this.start].push(edge)
+            this.edgesFromNode[this.start] = new Array<NfaEdge>()
+            this.edgesFromNode[this.finish] = new Array<NfaEdge>()
+            this.addEdge(this.start, this.finish, s)
+        } else {
+            this.nodesNumber = 0
+            this.edgesFromNode = new Array<Array<NfaEdge>>()
         }
     }
 
@@ -85,78 +85,85 @@ export class NFA {
     }
 
     addNode() {
-        return this.nodesNumber++
+        this.edgesFromNode[this.nodesNumber++] = new Array<NfaEdge>()
+        return this.nodesNumber - 1
     }
-    addEdge(from: number, to: number, expr?: transferValue) {
+
+    private removeFinish() {
+        this.nodesNumber -- 
+        this.edgesFromNode.pop()
+    }
+
+    addEdge(from: number, to: number, expr: transferValue) {
         if (!this.edgesFromNode[from]) {
             this.edgesFromNode[from] = new Array<NfaEdge>()
         }
         this.edgesFromNode[from].push(new NfaEdge(to, expr))
     }
 
-    private extends(anotherNFA: NFA) {
+    private extends(anotherNFA: NFA): number {
         if (anotherNFA == null) {
-            return this
+            return -1
         }
         let newEdgeArr = clone(anotherNFA.edgesFromNode)
         for (var i = 0; i < anotherNFA.nodesNumber; ++i) {
             if (newEdgeArr[i]) {
-                // newEdgeArr[i] = newEdgeArr[i].map(
-                //     edge => new NfaEdge(edge.to + this.nodesNumber-1, edge.expr)
-                // )
                 for (var j = 0; j < newEdgeArr[i].length; ++j) {
-                    newEdgeArr[i][j] = new NfaEdge(newEdgeArr[i][j].to + this.nodesNumber - 1, newEdgeArr[i][j].expr)
+                    newEdgeArr[i][j] = new NfaEdge(newEdgeArr[i][j].to + this.nodesNumber, newEdgeArr[i][j].expr)
                 }
             }
 
         }
+        if (!this.edgesFromNode) {
+            this.edgesFromNode = new Array<Array<NfaEdge>>()
+        }
         this.edgesFromNode = this.edgesFromNode.concat(newEdgeArr)
-        this.finish = anotherNFA.finish + this.nodesNumber - 1
-        this.nodesNumber += anotherNFA.nodesNumber - 1
+        let originNodesNumber = this.nodesNumber
+        this.nodesNumber += anotherNFA.nodesNumber
+        this.finish = this.nodesNumber - 1
+        return originNodesNumber
+    }
+
+    private __concat(anotherNFA: NFA) {
+        this.removeFinish()
+        let anotherNFAStartNode = this.extends(anotherNFA)
         return this
     }
 
     static concat(lhsNFA: NFA, rhsNFA: NFA): NFA {
         let newNfa = new NFA(lhsNFA);
-        return newNfa.extends(rhsNFA)
+        return newNfa.__concat(rhsNFA)
     }
 
     static kleenClosure(nfa: NFA): NFA {
-        // let newNfa = new NFA(nfa);
-        // let newNode1 = newNfa.addNode()
-        // let newNode2 = newNfa.addNode()
-        // let start = newNfa.start
-        // let finish = newNfa.finish
-        // newNfa.addEdge(newNode1, start, NFA.episilon)
-        // newNfa.addEdge(finish, newNode2, NFA.episilon)
-        // newNfa.addEdge(newNode1, newNode2, NFA.episilon)
-        // newNfa.addEdge(finish, start, NFA.episilon)
-        // newNfa.start = newNode1
-        // newNfa.finish = newNode2
-
         let originNFA = new NFA(nfa)
         originNFA.addEdge(originNFA.finish, originNFA.start, NFA.episilon)
         let newNfa = new NFA(null, NFA.episilon)
-        
-        newNfa.extends(originNFA)
-        let finishNode =newNfa.addNode()
+
+        newNfa.__concat(originNFA)
+        let finishNode = newNfa.addNode()
         newNfa.addEdge(newNfa.finish, finishNode, NFA.episilon)
-        newNfa.finish=  finishNode
+        newNfa.finish = finishNode
         newNfa.addEdge(newNfa.start, finishNode, NFA.episilon)
-        
+
         return newNfa
     }
 
 
     static union(lhsNFA: NFA, rhsNFA): NFA {
-        let newNfa = new NFA(null, NFA.episilon)
-        newNfa.extends(lhsNFA)
-        let secondNfaStart = newNfa.addNode()
-        newNfa.extends(rhsNFA)
-        newNfa.addEdge(0, secondNfaStart, NFA.episilon)
+        let newNfa = new NFA()
+        let startNode = newNfa.addNode()
+        newNfa.start = startNode
+        let startOfLhsNfa = newNfa.extends(lhsNFA)
+        let startOfRhsNfa = newNfa.extends(rhsNFA)
+
+        newNfa.addEdge(startNode, startOfLhsNfa, NFA.episilon)
+        newNfa.addEdge(startNode, startOfRhsNfa, NFA.episilon)
+
         let finishNode = newNfa.addNode()
-        newNfa.addEdge(secondNfaStart - 1, finishNode, NFA.episilon)
-        newNfa.addEdge(newNfa.nodesNumber - 2, finishNode, NFA.episilon)
+        newNfa.addEdge(startOfRhsNfa - 1, finishNode, NFA.episilon)
+        newNfa.addEdge(finishNode - 1, finishNode, NFA.episilon)
+        newNfa.finish = finishNode
         return newNfa
     }
 }

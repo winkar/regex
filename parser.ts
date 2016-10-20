@@ -66,7 +66,7 @@ export default class Parser {
         if (this.peek == "|") {
             this.peek = this.in.read(1)
             let rhsNFA = this.buildNFA()
-            return NFA.concat(lhsNFA, rhsNFA)
+            return NFA.union(lhsNFA, rhsNFA)
         }
 
         if (this.peek == null) {
