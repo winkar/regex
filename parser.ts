@@ -44,21 +44,16 @@ export default class Parser {
     private buildNFA(): NFA {
         let lhsNFA: NFA;
 
+
         if (this.peek.isAlpha()) {
             lhsNFA = new NFA(null, this.peek)
-
             //consume this char
             this.peek = this.in.read(1)
-        }
-
-        if (this.peek == "(") {
+        } else if (this.peek == "(") {
+            //consume left parenthesis
+            this.peek = this.in.read(1)
             lhsNFA = this.buildNFA()
-
-            //consume right parenthesis
-            this.peek = this.in.read(1)
-
-            //continue to succ char
-            this.peek = this.in.read(1)
+            // right parenthesis will be processed below
         }
 
         //if transfer needed
@@ -67,7 +62,11 @@ export default class Parser {
             //consume star
             this.peek = this.in.read(1)
         }
+
         if (this.peek == null) {
+            return lhsNFA
+        } else if (this.peek == ")") {
+            this.peek = this.in.read(1)
             return lhsNFA
         } else {
             let rhsNFA = this.buildNFA()
