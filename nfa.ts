@@ -122,17 +122,28 @@ export class NFA {
     }
 
     static kleenClosure(nfa: NFA): NFA {
-        let newNfa = new NFA(nfa);
-        let newNode1 = newNfa.addNode()
-        let newNode2 = newNfa.addNode()
-        let start = newNfa.start
-        let finish = newNfa.finish
-        newNfa.addEdge(newNode1, start, NFA.episilon)
-        newNfa.addEdge(finish, newNode2, NFA.episilon)
-        newNfa.addEdge(newNode1, newNode2, NFA.episilon)
-        newNfa.addEdge(finish, start, NFA.episilon)
-        newNfa.start = newNode1
-        newNfa.finish = newNode2
+        // let newNfa = new NFA(nfa);
+        // let newNode1 = newNfa.addNode()
+        // let newNode2 = newNfa.addNode()
+        // let start = newNfa.start
+        // let finish = newNfa.finish
+        // newNfa.addEdge(newNode1, start, NFA.episilon)
+        // newNfa.addEdge(finish, newNode2, NFA.episilon)
+        // newNfa.addEdge(newNode1, newNode2, NFA.episilon)
+        // newNfa.addEdge(finish, start, NFA.episilon)
+        // newNfa.start = newNode1
+        // newNfa.finish = newNode2
+
+        let originNFA = new NFA(nfa)
+        originNFA.addEdge(originNFA.finish, originNFA.start, NFA.episilon)
+        let newNfa = new NFA(null, NFA.episilon)
+        
+        newNfa.extends(originNFA)
+        let finishNode =newNfa.addNode()
+        newNfa.addEdge(newNfa.finish, finishNode, NFA.episilon)
+        newNfa.finish=  finishNode
+        newNfa.addEdge(newNfa.start, finishNode, NFA.episilon)
+        
         return newNfa
     }
 
