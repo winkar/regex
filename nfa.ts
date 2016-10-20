@@ -4,6 +4,10 @@ class Episilon {
     toJSON(): string {
         return "ε";
     }
+
+    toString(): string {
+        return "ε";
+    }
 }
 
 type transferValue = string | Episilon
@@ -32,6 +36,13 @@ export class NFA {
     finish: number
     edgesFromNode: Array<Array<NfaEdge>>
 
+    /**
+     * When called with an NFA object as arguement, return its clone
+     * 
+     * When called with a transferValue s as argument, return a trival nfa equivalent to regex r"s"
+     * 
+     * When none arg provided, return an uninitialized NFA.
+     */
     constructor(nfa?: NFA, s?: transferValue) {
         if (nfa) {
             this.nodesNumber = nfa.nodesNumber
@@ -54,6 +65,23 @@ export class NFA {
 
     toString(): string {
         return JSON.stringify(this, null, 4)
+    }
+
+    toDot(): string {
+        let dotString = "digraph finite_state_machine {\n\
+            rankdir=LR\n\
+            size=\"8,5\"\n\
+            node [shape=circle];\n"
+        for (var i = 0; i < this.nodesNumber; ++i) {
+            if (this.edgesFromNode[i]) {
+                this.edgesFromNode[i].forEach((edge) => {
+                    dotString += i.toString() + "->" + edge.to.toString() + "[label = " + edge.expr.toString() + "]"
+                    dotString += "\n"
+                })
+            }
+        }
+        dotString += "}"
+        return dotString
     }
 
     addNode() {
@@ -107,9 +135,22 @@ export class NFA {
         newNfa.finish = newNode2
         return newNfa
     }
+
+
+    static union(lhsNFA: NFA, rhsNFA): NFA {
+        let newNfa = new NFA(null, NFA.episilon)
+        newNfa.extends(lhsNFA)
+        let secondNfaStart = newNfa.addNode()
+        newNfa.extends(rhsNFA)
+        newNfa.addEdge(0, secondNfaStart, NFA.episilon)
+        let finishNode = newNfa.addNode()
+        newNfa.addEdge(secondNfaStart - 1, finishNode, NFA.episilon)
+        newNfa.addEdge(newNfa.nodesNumber - 2, finishNode, NFA.episilon)
+        return newNfa
+    }
 }
 
-export default {NFA, NfaEdge}
+export default { NFA, NfaEdge }
 
 
 
