@@ -4,3 +4,5 @@
 *.map
 node_modules
 typings
+img
+dot
