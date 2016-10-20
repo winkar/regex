@@ -46,7 +46,7 @@ describe("NFA", () => {
 
 describe("Parser", () => {
 
-    describe("Simple parse test", () => {
+    describe("Simple regex parse test", () => {
         it('re ~= ab', (done) => {
             let ins = new StringStream("ab")
             let parser = new Parser(ins)
@@ -66,7 +66,58 @@ describe("Parser", () => {
             assert.equal(targetJSON, JSON.stringify(nfa))
             done()
         })
+
+        it('re ~= a*', (done) => {
+            let ins = new StringStream("a*")
+            let parser = new Parser(ins)
+            let nfa = parser.parse()
+
+            let targetJSON = '{"nodesNumber":4,"start":2,"finish":3,"edgesFromNode":[[{"to":1,"expr":"a"}],[{"to":3,"expr":"ε"},{"to":0,"expr":"ε"}],[{"to":0,"expr":"ε"},{"to":3,"expr":"ε"}]]}'
+            assert.equal(targetJSON, JSON.stringify(nfa))
+            done()
+        })
+
+        it('re ~= ba*', (done) => {
+            let ins = new StringStream("ba*")
+            let parser = new Parser(ins)
+            let nfa = parser.parse()
+
+            let targetJSON = '{"nodesNumber":5,"start":0,"finish":4,"edgesFromNode":[[{"to":1,"expr":"b"}],[{"to":2,"expr":"a"}],[{"to":4,"expr":"ε"},{"to":1,"expr":"ε"}],[{"to":1,"expr":"ε"},{"to":4,"expr":"ε"}]]}'
+            assert.equal(targetJSON, JSON.stringify(nfa))
+            done()
+        })
     })
+
+    describe("Regex with parenthesis parse test", () => {
+        it('re ~= a(bc)', (done) => {
+            let ins = new StringStream("a(bc)")
+            let parser = new Parser(ins)
+            let nfa = parser.parse()
+
+            let targetJSON = '{"nodesNumber":4,"start":0,"finish":3,"edgesFromNode":[[{"to":1,"expr":"a"}],[{"to":2,"expr":"b"}],[{"to":3,"expr":"c"}]]}'
+            assert.equal(targetJSON, JSON.stringify(nfa))
+            done()
+        })
+        it('re ~= a(bc)d', (done) => {
+            let ins = new StringStream("a(bc)d")
+            let parser = new Parser(ins)
+            let nfa = parser.parse()
+
+            let targetJSON = '{"nodesNumber":5,"start":0,"finish":4,"edgesFromNode":[[{"to":1,"expr":"a"}],[{"to":2,"expr":"b"}],[{"to":3,"expr":"c"}],[{"to":4,"expr":"d"}]]}'
+            assert.equal(targetJSON, JSON.stringify(nfa))
+            done()
+        })
+        it('re ~= a(bc)*d', (done) => {
+            let ins = new StringStream("a(bc)*d")
+            let parser = new Parser(ins)
+            let nfa = parser.parse()
+
+            let targetJSON = '{"nodesNumber":7,"start":0,"finish":6,"edgesFromNode":[[{"to":1,"expr":"a"}],[{"to":2,"expr":"b"}],[{"to":3,"expr":"c"}],[{"to":5,"expr":"ε"},{"to":1,"expr":"ε"}],[{"to":1,"expr":"ε"},{"to":5,"expr":"ε"}],[{"to":6,"expr":"d"}]]}'
+            assert.equal(targetJSON, JSON.stringify(nfa))
+            done()
+        })
+    })
+
 
 })
 
